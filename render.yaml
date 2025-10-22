@@ -1,0 +1,9 @@
+services:
+  - type: web
+  name: kiaren
+    env: node
+    plan: free
+    buildCommand: bun install
+    startCommand: bun start
+    autoDeploy: true
+    pullRequestPreviewsEnabled: true
