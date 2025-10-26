@@ -19,6 +19,7 @@ function getStatusColor(status) {
 }
 
 module.exports = {
+  category: 'utility',
   data: new SlashCommandBuilder()
     .setName('activity-leaderboard')
     .setDescription('View the activity leaderboard dashboard.')
@@ -74,7 +75,7 @@ module.exports = {
       });
     }
 
-    const canvasWidth = 1400;
+    const canvasWidth = 1600;
     const canvasHeight = 800 + (topUsers.length - 1) * 120; // Dynamic height based on users
     const canvas = createCanvas(canvasWidth, canvasHeight);
     const ctx = canvas.getContext('2d');
@@ -104,9 +105,10 @@ module.exports = {
     ctx.fillText('Messages', 600, 120);
     ctx.fillText('Reactions', 750, 120);
     ctx.fillText('Voice (min)', 900, 120);
-    ctx.fillText('Streak', 1050, 120);
-    ctx.fillText('Highest', 1150, 120);
-    ctx.fillText('Score', 1250, 120);
+    ctx.fillText('Stream (min)', 1100, 120);
+    ctx.fillText('Streak', 1220, 120);
+    ctx.fillText('Highest', 1320, 120);
+    ctx.fillText('Score', 1420, 120);
 
     // Draw header separator line
     ctx.strokeStyle = '#000000';
@@ -183,12 +185,13 @@ module.exports = {
         ctx.fillText(userData[`${period}Count`].toString(), 620, yOffset + 35);
         ctx.fillText((userData.reactionsGiven + userData.reactionsReceived).toString(), 780, yOffset + 35);
         ctx.fillText(userData.voiceTime.toString(), 940, yOffset + 35);
-        ctx.fillText(userData.streak.toString(), 1080, yOffset + 35);
-        ctx.fillText(userData.highestStreak.toString(), 1180, yOffset + 35);
+        ctx.fillText((userData.streamTime || 0).toString(), 1120, yOffset + 35);
+        ctx.fillText(userData.streak.toString(), 1240, yOffset + 35);
+        ctx.fillText(userData.highestStreak.toString(), 1340, yOffset + 35);
 
         // Calculated score (weighted sum)
-        const score = userData[`${period}Count`] + (userData.reactionsGiven + userData.reactionsReceived) * 0.5 + userData.voiceTime * 2 + userData.streak * 10;
-        ctx.fillText(Math.floor(score).toString(), 1280, yOffset + 35);
+        const score = userData[`${period}Count`] + (userData.reactionsGiven + userData.reactionsReceived) * 0.5 + userData.voiceTime * 2 + (userData.streamTime || 0) * 1.5 + userData.streak * 10;
+        ctx.fillText(Math.floor(score).toString(), 1440, yOffset + 35);
 
         // Separator line
         ctx.strokeStyle = '#000000';
@@ -209,7 +212,7 @@ module.exports = {
     ctx.fillStyle = '#000000';
     ctx.font = 'bold 20px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`Score = Messages + (Reactions × 0.5) + (Voice × 2) + (Streak × 10)`, canvasWidth / 2, canvasHeight - 30);
+    ctx.fillText(`Score = Messages + (Reactions × 0.5) + (Voice × 2) + (Stream × 1.5) + (Streak × 10)`, canvasWidth / 2, canvasHeight - 30);
 
     const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), {
       name: 'activity-leaderboard.png',

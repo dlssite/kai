@@ -4,6 +4,7 @@ const { createCanvas, loadImage } = require('@napi-rs/canvas');
 const fetch = require('node-fetch');
 
 module.exports = {
+  category: 'level',
   data: new SlashCommandBuilder()
     .setName('leaderboard')
     .setDescription('View the server leaderboard based on levels and XP.'),

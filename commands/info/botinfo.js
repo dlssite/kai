@@ -9,6 +9,7 @@ const moment = require('moment');
 const os = require('os');
 
 module.exports = {
+  category: 'info',
   data: new SlashCommandBuilder()
     .setName('botinfo')
     .setDescription('Displays information about the bot.'),

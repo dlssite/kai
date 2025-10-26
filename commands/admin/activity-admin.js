@@ -27,6 +27,7 @@ function getStatusColor(status) {
 }
 
 module.exports = {
+  category: 'admin',
   data: new SlashCommandBuilder()
     .setName('activity-admin')
     .setDescription('Admin commands for managing activity tracking')
@@ -57,6 +58,11 @@ module.exports = {
       subcommand
         .setName('manage')
         .setDescription('Interactive management panel for activity data')
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('setup-roles')
+        .setDescription('Set up activity-based auto-roles')
     ),
 
   async execute(interaction) {
@@ -73,6 +79,8 @@ module.exports = {
       await this.handleViewTop(interaction);
     } else if (subcommand === 'manage') {
       await this.handleManage(interaction);
+    } else if (subcommand === 'setup-roles') {
+      await this.handleSetupRoles(interaction);
     }
   },
 
@@ -109,7 +117,7 @@ module.exports = {
       });
     }
 
-    const canvasWidth = 1400;
+    const canvasWidth = 1600;
     const canvasHeight = 800 + (topUsers.length - 1) * 120;
     const canvas = createCanvas(canvasWidth, canvasHeight);
     const ctx = canvas.getContext('2d');
@@ -139,9 +147,10 @@ module.exports = {
     ctx.fillText('Messages', 600, 120);
     ctx.fillText('Reactions', 750, 120);
     ctx.fillText('Voice (min)', 900, 120);
-    ctx.fillText('Streak', 1050, 120);
-    ctx.fillText('Highest', 1150, 120);
-    ctx.fillText('Score', 1250, 120);
+    ctx.fillText('Stream (min)', 1100, 120);
+    ctx.fillText('Streak', 1220, 120);
+    ctx.fillText('Highest', 1320, 120);
+    ctx.fillText('Score', 1420, 120);
 
     // Separator line
     ctx.strokeStyle = '#000000';
@@ -208,11 +217,12 @@ module.exports = {
         ctx.fillText(userData[`${period}Count`].toString(), 620, yOffset + 35);
         ctx.fillText((userData.reactionsGiven + userData.reactionsReceived).toString(), 780, yOffset + 35);
         ctx.fillText(userData.voiceTime.toString(), 940, yOffset + 35);
-        ctx.fillText(userData.streak.toString(), 1080, yOffset + 35);
-        ctx.fillText(userData.highestStreak.toString(), 1180, yOffset + 35);
+        ctx.fillText((userData.streamTime || 0).toString(), 1120, yOffset + 35);
+        ctx.fillText(userData.streak.toString(), 1240, yOffset + 35);
+        ctx.fillText(userData.highestStreak.toString(), 1340, yOffset + 35);
 
-        const score = userData[`${period}Count`] + (userData.reactionsGiven + userData.reactionsReceived) * 0.5 + userData.voiceTime * 2 + userData.streak * 10;
-        ctx.fillText(Math.floor(score).toString(), 1280, yOffset + 35);
+        const score = userData[`${period}Count`] + (userData.reactionsGiven + userData.reactionsReceived) * 0.5 + userData.voiceTime * 2 + (userData.streamTime || 0) * 1.5 + userData.streak * 10;
+        ctx.fillText(Math.floor(score).toString(), 1440, yOffset + 35);
 
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 1;
@@ -231,7 +241,7 @@ module.exports = {
     ctx.fillStyle = '#000000';
     ctx.font = 'bold 20px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`Score = Messages + (Reactions × 0.5) + (Voice × 2) + (Streak × 10)`, canvasWidth / 2, canvasHeight - 30);
+    ctx.fillText(`Score = Messages + (Reactions × 0.5) + (Voice × 2) + (Stream × 1.5) + (Streak × 10)`, canvasWidth / 2, canvasHeight - 30);
 
     const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'admin-top-users.png' });
 
@@ -284,6 +294,50 @@ module.exports = {
     await interaction.reply({
       embeds: [embed],
       components: [row1, row2],
+      ephemeral: true,
+    });
+  },
+
+  async handleSetupRoles(interaction) {
+    const { ActivityRoles } = require('../../models/ActivityRoles');
+
+    let activityRoles = await ActivityRoles.findOne({ guildId: interaction.guild.id });
+    if (!activityRoles) {
+      activityRoles = new ActivityRoles({ guildId: interaction.guild.id });
+      await activityRoles.save();
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('Activity Auto-Roles Setup')
+      .setDescription('Configure roles for activity-based rankings. Select a tier to set the role:')
+      .setColor('#FFA500')
+      .addFields(
+        { name: 'Top 1-3', value: activityRoles.top1to3RoleId ? `<@&${activityRoles.top1to3RoleId}>` : 'Not set', inline: true },
+        { name: 'Top 4-10', value: activityRoles.top4to10RoleId ? `<@&${activityRoles.top4to10RoleId}>` : 'Not set', inline: true },
+        { name: 'Top 11-15', value: activityRoles.top11to15RoleId ? `<@&${activityRoles.top11to15RoleId}>` : 'Not set', inline: true },
+        { name: 'Top 16-20', value: activityRoles.top16to20RoleId ? `<@&${activityRoles.top16to20RoleId}>` : 'Not set', inline: true },
+        { name: 'Overall Active', value: activityRoles.overallActiveRoleId ? `<@&${activityRoles.overallActiveRoleId}>` : 'Not set', inline: true },
+        { name: 'Inactive', value: activityRoles.inactiveRoleId ? `<@&${activityRoles.inactiveRoleId}>` : 'Not set', inline: true }
+      )
+      .setTimestamp();
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId('select_activity_role_tier')
+      .setPlaceholder('Choose a tier to configure')
+      .addOptions(
+        { label: 'Top 1-3', value: 'top1to3', description: 'Role for top 3 active users' },
+        { label: 'Top 4-10', value: 'top4to10', description: 'Role for top 4-10 active users' },
+        { label: 'Top 11-15', value: 'top11to15', description: 'Role for top 11-15 active users' },
+        { label: 'Top 16-20', value: 'top16to20', description: 'Role for top 16-20 active users' },
+        { label: 'Overall Active', value: 'overallActive', description: 'Role for generally active users' },
+        { label: 'Inactive', value: 'inactive', description: 'Role for users inactive for 1+ week' }
+      );
+
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    await interaction.reply({
+      embeds: [embed],
+      components: [row],
       ephemeral: true,
     });
   },

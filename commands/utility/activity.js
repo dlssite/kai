@@ -5,6 +5,7 @@ const sharp = require('sharp');
 const fetch = require('node-fetch');
 
 module.exports = {
+  category: 'utility',
   data: new SlashCommandBuilder()
     .setName('activity')
     .setDescription('Check your detailed activity stats dashboard.')
@@ -138,7 +139,7 @@ module.exports = {
 
     // Second row
     const secondRowY = startY + boxHeight + boxSpacing;
-    this.drawStatBox(ctx, startX, secondRowY, boxWidth, boxHeight, 'Stream Time (min)', activityData.streamTime, '#FF1493');
+    this.drawStatBox(ctx, startX, secondRowY, boxWidth, boxHeight, 'Stream Time (min)', activityData.streamTime || 0, '#FF1493');
     this.drawStatBox(ctx, startX + boxWidth + boxSpacing, secondRowY, boxWidth, boxHeight, 'Commands Used', activityData.commandsUsed, '#4ECDC4');
     this.drawStatBox(ctx, startX + 2 * (boxWidth + boxSpacing), secondRowY, boxWidth, boxHeight, 'Attachments Sent', activityData.attachmentsSent, '#45B7D1');
     this.drawStatBox(ctx, startX + 3 * (boxWidth + boxSpacing), secondRowY, boxWidth, boxHeight, 'Mentions Given', activityData.mentionsGiven, '#96CEB4');

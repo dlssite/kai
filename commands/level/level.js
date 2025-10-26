@@ -5,6 +5,7 @@ const sharp = require('sharp');
 const fetch = require('node-fetch');
 
 module.exports = {
+  category: 'level',
   data: new SlashCommandBuilder()
     .setName('level')
     .setDescription('Check your level and XP.')

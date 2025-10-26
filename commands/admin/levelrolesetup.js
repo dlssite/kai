@@ -10,6 +10,7 @@ const {
 const { GuildSettings, LevelRoles } = require('../../models/Level');
 
 module.exports = {
+  category: 'admin',
   data: new SlashCommandBuilder()
     .setName('levelrolesetup')
     .setDescription('Interactive dashboard to manage level roles'),

@@ -17,10 +17,10 @@ module.exports = {
     const now = Date.now();
 
     // Check if user started streaming
-    const oldStreaming = oldPresence?.activities?.some(activity => activity.type === 1); // Streaming type
-    const newStreaming = newPresence.activities?.some(activity => activity.type === 1);
+    const wasStreaming = oldPresence?.activities?.some(activity => activity.type === 1) || false; // 1 = STREAMING
+    const isStreaming = newPresence.activities?.some(activity => activity.type === 1) || false;
 
-    if (!oldStreaming && newStreaming) {
+    if (!wasStreaming && isStreaming) {
       // User started streaming
       streamSessions.set(userId, { startTime: now });
 
@@ -28,8 +28,8 @@ module.exports = {
       const { logActivity } = require('../../utils/logger');
       logActivity(newPresence.client, guild.id, 'Stream Started', {
         user: userId,
-      }, 0x00ff00).catch(err => console.error('Logging error:', err)); // Green for start
-    } else if (oldStreaming && !newStreaming) {
+      }, 0x00ff00).catch(err => console.error('Logging error:', err));
+    } else if (wasStreaming && !isStreaming) {
       // User stopped streaming
       const session = streamSessions.get(userId);
       if (session) {
@@ -69,7 +69,7 @@ module.exports = {
         logActivity(oldPresence.client, guild.id, 'Stream Ended', {
           user: userId,
           duration: duration,
-        }, 0xff0000).catch(err => console.error('Logging error:', err)); // Red for end
+        }, 0xff0000).catch(err => console.error('Logging error:', err));
       }
     }
   },
