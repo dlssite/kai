@@ -7,6 +7,7 @@ const guildSettingsSchema = new mongoose.Schema({
   levelingEnabled: { type: Boolean, default: true },
   startingXp: { type: Number, default: 1000 },
   xpPerLevel: { type: Number, default: 500 },
+  stackable: { type: Boolean, default: false },
 });
 
 const memberDataSchema = new mongoose.Schema({
@@ -27,12 +28,22 @@ const levelRoleSchema = new mongoose.Schema({
 
 levelRoleSchema.index({ guildId: 1, level: 1 }, { unique: true });
 
+const bonusXpRoleSchema = new mongoose.Schema({
+  guildId: { type: String, required: true },
+  roleId: { type: String, required: true },
+  multiplier: { type: Number, default: 1.5 },
+});
+
+bonusXpRoleSchema.index({ guildId: 1, roleId: 1 }, { unique: true });
+
 const GuildSettings = mongoose.model('GuildSettings', guildSettingsSchema);
 const MemberData = mongoose.model('MemberData', memberDataSchema);
 const LevelRoles = mongoose.model('LevelRoles', levelRoleSchema);
+const BonusXpRoles = mongoose.model('BonusXpRoles', bonusXpRoleSchema);
 
 module.exports = {
   GuildSettings,
   MemberData,
   LevelRoles,
+  BonusXpRoles,
 };

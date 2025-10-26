@@ -130,34 +130,25 @@ module.exports = {
     const startX = 50;
     const startY = 300;
 
-    // Messages box
+    // First row
     this.drawStatBox(ctx, startX, startY, boxWidth, boxHeight, 'Messages', activityData.dailyCount, '#FF6B35');
-    // Reactions Given box
     this.drawStatBox(ctx, startX + boxWidth + boxSpacing, startY, boxWidth, boxHeight, 'Reactions Given', activityData.reactionsGiven, '#F7931E');
-    // Reactions Received box
     this.drawStatBox(ctx, startX + 2 * (boxWidth + boxSpacing), startY, boxWidth, boxHeight, 'Reactions Received', activityData.reactionsReceived, '#FFD23F');
-    // Voice Time box
     this.drawStatBox(ctx, startX + 3 * (boxWidth + boxSpacing), startY, boxWidth, boxHeight, 'Voice Time (min)', activityData.voiceTime, '#06FFA5');
 
     // Second row
     const secondRowY = startY + boxHeight + boxSpacing;
-    // Commands Used box
-    this.drawStatBox(ctx, startX, secondRowY, boxWidth, boxHeight, 'Commands Used', activityData.commandsUsed, '#4ECDC4');
-    // Attachments Sent box
-    this.drawStatBox(ctx, startX + boxWidth + boxSpacing, secondRowY, boxWidth, boxHeight, 'Attachments Sent', activityData.attachmentsSent, '#45B7D1');
-    // Mentions Given box
-    this.drawStatBox(ctx, startX + 2 * (boxWidth + boxSpacing), secondRowY, boxWidth, boxHeight, 'Mentions Given', activityData.mentionsGiven, '#96CEB4');
-    // Current Streak box
-    this.drawStatBox(ctx, startX + 3 * (boxWidth + boxSpacing), secondRowY, boxWidth, boxHeight, 'Current Streak', activityData.streak, '#FFEAA7');
+    this.drawStatBox(ctx, startX, secondRowY, boxWidth, boxHeight, 'Stream Time (min)', activityData.streamTime, '#FF1493');
+    this.drawStatBox(ctx, startX + boxWidth + boxSpacing, secondRowY, boxWidth, boxHeight, 'Commands Used', activityData.commandsUsed, '#4ECDC4');
+    this.drawStatBox(ctx, startX + 2 * (boxWidth + boxSpacing), secondRowY, boxWidth, boxHeight, 'Attachments Sent', activityData.attachmentsSent, '#45B7D1');
+    this.drawStatBox(ctx, startX + 3 * (boxWidth + boxSpacing), secondRowY, boxWidth, boxHeight, 'Mentions Given', activityData.mentionsGiven, '#96CEB4');
 
-    // Third row for highest streak, weekly, and monthly totals
+    // Third row
     const thirdRowY = secondRowY + boxHeight + boxSpacing;
-    // Highest Streak box
-    this.drawStatBox(ctx, startX, thirdRowY, boxWidth, boxHeight, 'Highest Streak', activityData.highestStreak, '#FF6B9B');
-    // Weekly Messages box
-    this.drawStatBox(ctx, startX + boxWidth + boxSpacing, thirdRowY, boxWidth, boxHeight, 'Weekly Msgs', activityData.weeklyCount, '#A8E6CF');
-    // Monthly Messages box
-    this.drawStatBox(ctx, startX + 2 * (boxWidth + boxSpacing), thirdRowY, boxWidth, boxHeight, 'Monthly Msgs', activityData.monthlyCount, '#DCEDC1');
+    this.drawStatBox(ctx, startX, thirdRowY, boxWidth, boxHeight, 'Current Streak', activityData.streak, '#FFEAA7');
+    this.drawStatBox(ctx, startX + boxWidth + boxSpacing, thirdRowY, boxWidth, boxHeight, 'Highest Streak', activityData.highestStreak, '#FF6B9B');
+    this.drawStatBox(ctx, startX + 2 * (boxWidth + boxSpacing), thirdRowY, boxWidth, boxHeight, 'Weekly Msgs', activityData.weeklyCount, '#A8E6CF');
+    this.drawStatBox(ctx, startX + 3 * (boxWidth + boxSpacing), thirdRowY, boxWidth, boxHeight, 'Monthly Msgs', activityData.monthlyCount, '#DCEDC1');
 
     // Progress bars for goals
     this.drawProgressBar(ctx, 50, 820, 500, 30, 'Daily Goal (50 msgs)', activityData.dailyCount, 50, '#FFA500');

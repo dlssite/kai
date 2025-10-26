@@ -1,5 +1,5 @@
 const { Events } = require('discord.js');
-const { GuildSettings, MemberData, LevelRoles } = require('../models/Level');
+const { GuildSettings, MemberData, LevelRoles, BonusXpRoles } = require('../models/Level');
 const { ActivityData } = require('../models/Activity');
 
 const cooldowns = new Map();
@@ -25,7 +25,25 @@ module.exports = {
       return;
     messageTimestamps.set(message.author.id, currentTime);
 
-    const xpToAdd = Math.floor(Math.random() * 10 + 5) * xpRate;
+    // Calculate bonus XP multiplier based on user's roles
+    let bonusMultiplier = 1;
+    try {
+      const member = await message.guild.members.fetch(message.author.id);
+      const bonusXpRoles = await BonusXpRoles.find({
+        guildId: message.guild.id,
+      });
+
+      for (const bonusRole of bonusXpRoles) {
+        if (member.roles.cache.has(bonusRole.roleId)) {
+          bonusMultiplier = Math.max(bonusMultiplier, bonusRole.multiplier);
+        }
+      }
+    } catch (error) {
+      console.error('Error calculating bonus XP:', error.message);
+    }
+
+    const baseXp = Math.floor(Math.random() * 10 + 5);
+    const xpToAdd = Math.floor(baseXp * xpRate * bonusMultiplier);
 
     let memberData = await MemberData.findOne({
       guildId: message.guild.id,
@@ -172,8 +190,19 @@ module.exports = {
         return;
       }
 
+      const { LevelRoles } = require('../models/Level');
+      const earnedRoles = await LevelRoles.find({
+        guildId: message.guild.id,
+        level: level,
+      });
+
+      let roleMention = '';
+      if (earnedRoles.length > 0) {
+        roleMention = ` You earned the role(s): ${earnedRoles.map(r => `<@&${r.roleId}>`).join(', ')}`;
+      }
+
       await channel.send(
-        `${message.author} has leveled up to level **${level}**! 🎉`
+        `${message.author} has leveled up to level **${level}**! 🎉${roleMention}`
       );
     } catch (err) {
       console.error('Level-up message failed:', err.message);
@@ -183,6 +212,9 @@ module.exports = {
   assignRoles: async (message, startLevel, endLevel) => {
     try {
       const member = await message.guild.members.fetch(message.author.id);
+      const guildData = await GuildSettings.findOne({
+        guildId: message.guild.id,
+      });
 
       const rolesToAdd = await LevelRoles.find({
         guildId: message.guild.id,
@@ -195,8 +227,38 @@ module.exports = {
       });
 
       const allRoles = [...rolesToAdd, ...additionalRoles];
-      const roleChunks = [];
 
+      if (guildData.stackable) {
+        // Remove roles from levels below the new level
+        const lowerRoles = await LevelRoles.find({
+          guildId: message.guild.id,
+          level: { $lt: endLevel },
+        });
+
+        const roleChunksRemove = [];
+        for (let i = 0; i < lowerRoles.length; i += 20) {
+          roleChunksRemove.push(lowerRoles.slice(i, i + 20));
+        }
+
+        for (const chunk of roleChunksRemove) {
+          const promises = chunk.map(async (roleData) => {
+            const role = message.guild.roles.cache.get(roleData.roleId);
+            if (role && member.roles.cache.has(role.id)) {
+              try {
+                await member.roles.remove(role);
+              } catch (err) {
+                console.error(
+                  `Error removing role ${role.name} from ${member.user.tag}:`,
+                  err.message
+                );
+              }
+            }
+          });
+          await Promise.all(promises);
+        }
+      }
+
+      const roleChunks = [];
       for (let i = 0; i < allRoles.length; i += 20) {
         roleChunks.push(allRoles.slice(i, i + 20)); // split into chunks of 20
       }

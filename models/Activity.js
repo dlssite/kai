@@ -13,6 +13,7 @@ const activityDataSchema = new mongoose.Schema({
   reactionsGiven: { type: Number, default: 0 },
   reactionsReceived: { type: Number, default: 0 },
   voiceTime: { type: Number, default: 0 }, // in minutes
+  streamTime: { type: Number, default: 0 }, // in minutes
   commandsUsed: { type: Number, default: 0 },
   attachmentsSent: { type: Number, default: 0 },
   mentionsGiven: { type: Number, default: 0 },
