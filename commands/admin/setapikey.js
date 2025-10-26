@@ -18,7 +18,7 @@ async function testApiKey(apiKey) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-  'HTTP-Referer': 'https://github.com/gaurav87565/Kiaren-2.0',
+  'HTTP-Referer': 'https://github.com/Kmber',
   'X-Title': 'Kiaren Discord Bot',
       },
       body: JSON.stringify(payload),

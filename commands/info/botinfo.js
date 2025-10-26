@@ -36,8 +36,8 @@ module.exports = {
       .setThumbnail(client.user.displayAvatarURL({ dynamic: true }))
       .addFields(
         {
-          name: 'Developer',
-          value: '```elm\nGaurav & Neppixel\n```',
+          name: 'Developed By',
+          value: '```elm\nDLS\n```',
           inline: true,
         },
         {
@@ -97,7 +97,7 @@ module.exports = {
 
     const sourceCodeButton = new ButtonBuilder()
       .setLabel('Source Code')
-  .setURL('https://github.com/gaurav87565/Kiaren-2.0')
+  .setURL('https://github.com/Kmber')
       .setStyle(ButtonStyle.Link);
 
     const row = new ActionRowBuilder().addComponents(sourceCodeButton);

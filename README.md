@@ -6,7 +6,7 @@
   
   [![Discord](https://img.shields.io/discord/1342840214573416458?color=5865F2&logo=discord&logoColor=white)](https://discord.gg/kAYpdenZ8b)
   [![License](https://img.shields.io/github/license/gaurav87565/Kiaren-2.0)](LICENSE)
-  [![Stars](https://img.shields.io/github/stars/gaurav87565/Kiaren-2.0?style=social)](https://github.com/gaurav87565/Kiaren-2.0/stargazers)
+  [![Stars](https://img.shields.io/github/stars/gaurav87565/Kiaren-2.0?style=social)](https://github.com/Kmber/stargazers)
 </div>
 
 ## ✨ About Kiaren
@@ -173,7 +173,7 @@ For any assistance, feature requests, or bug reports, join our official support 
 1. **Clone the Repository**
 
 ```bash
-git clone https://github.com/gaurav87565/Kiaren-2.0.git
+git clone https://github.com/Kmber.git
 cd Kiaren
 ```
 

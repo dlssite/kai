@@ -243,7 +243,7 @@ module.exports = {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://github.com/dls/Kiaren-2.0',
+          'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://github.com/Kmber',
           'X-Title': process.env.OPENROUTER_TITLE || 'Kiaren Discord Bot',
         },
         body: JSON.stringify(payload),
