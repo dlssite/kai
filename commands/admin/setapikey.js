@@ -1,31 +1,34 @@
 const { SlashCommandBuilder } = require('discord.js');
-const OpenRouterKey = require('../../models/OpenRouterKey');
+const GoogleAIKey = require('../../models/GoogleAIKey');
 
 async function testApiKey(apiKey) {
   try {
     const fetchFn = global.fetch || require('node-fetch');
     const payload = {
-      model: 'openai/gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'Test if API key works.' },
-        { role: 'user', content: 'Say "API key is valid".' },
+      contents: [
+        {
+          parts: [
+            {
+              text: 'Say "API key is valid".',
+            },
+          ],
+        },
       ],
-      max_tokens: 10,
-      temperature: 0.1,
+      generationConfig: {
+        maxOutputTokens: 10,
+        temperature: 0.1,
+      },
     };
-    const res = await fetchFn('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetchFn(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-  'HTTP-Referer': 'https://github.com/Kmber',
-  'X-Title': 'Kiaren Discord Bot',
       },
       body: JSON.stringify(payload),
     });
     if (!res.ok) return false;
     const data = await res.json();
-    return !!(data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content);
+    return !!(data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text);
   } catch (e) {
     return false;
   }
@@ -34,10 +37,10 @@ async function testApiKey(apiKey) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('setapikey')
-    .setDescription('Set OpenRouter API key for this server (admin only, with confirmation)')
+    .setDescription('Set Google AI API key for this server (admin only, with confirmation)')
     .addStringOption(option =>
       option.setName('key')
-        .setDescription('OpenRouter API key')
+        .setDescription('Google AI API key')
         .setRequired(true)),
   async execute(interaction) {
     // Only allow admins
@@ -54,12 +57,12 @@ module.exports = {
       return;
     }
     try {
-      await OpenRouterKey.findOneAndUpdate(
+      await GoogleAIKey.findOneAndUpdate(
         { guildId },
         { apiKey: key },
         { upsert: true, new: true }
       );
-      await interaction.editReply({ content: '✅ OpenRouter API key has been set and confirmed working for this server.' });
+      await interaction.editReply({ content: '✅ Google AI API key has been set and confirmed working for this server.' });
     } catch (err) {
       console.error('Error saving API key:', err);
       await interaction.editReply({ content: 'Failed to save API key.' });

@@ -65,20 +65,20 @@ module.exports = {
       userCooldowns.set(message.author.id, now);
 
       // Try to get per-guild API key from DB, fallback to .env
-      const OpenRouterKey = require('../../models/OpenRouterKey');
-      let OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+      const GoogleAIKey = require('../../models/GoogleAIKey');
+      let GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
       try {
         if (message.guild) {
-          const dbKey = await OpenRouterKey.findOne({ guildId: message.guild.id });
+          const dbKey = await GoogleAIKey.findOne({ guildId: message.guild.id });
           if (dbKey && dbKey.apiKey) {
-            OPENROUTER_API_KEY = dbKey.apiKey;
+            GOOGLE_AI_API_KEY = dbKey.apiKey;
           }
         }
       } catch (e) {
-        console.error('Error fetching OpenRouter API key from DB:', e);
+        console.error('Error fetching Google AI API key from DB:', e);
       }
 
-      const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-3.5-turbo';
+      const GOOGLE_AI_MODEL = process.env.GOOGLE_AI_MODEL || 'gemini-pro';
       // --- Fetch custom AI config for this server ---
       const ServerAIConfig = require('../../models/ServerAIConfig');
       let persona = '', bio = '', lore = '', hierarchy = '';
@@ -115,16 +115,11 @@ module.exports = {
         (bio ? `Bio: ${bio}\n` : '') +
         (lore ? `Server Lore: ${lore}\n` : '') +
         (hierarchy ? `Server Hierarchy: ${hierarchy}\n` : '') +
-        "You are REQUIRED to use and share any user memory or public server roles that are provided to you in the prompt. " +
-        "These are public or user-provided facts, and you have full access to them. " +
-        "If asked about a user, always use the provided memory and roles to answer. " +
-        "The roles listed for each user are their current Discord server roles. Always use these roles in your answer if asked about a user's roles. " +
-        "If the information is present in the prompt, do NOT say you lack access or need consent. " +
-        "If no info is available, say so. Keep responses short and relevant to the user's message.";
+        "Use provided user memory and roles to respect the user's status and context. Do not mention or list user roles in your responses unless directly asked about them. Keep responses short and relevant.";
 
-      if (!OPENROUTER_API_KEY) {
+      if (!GOOGLE_AI_API_KEY) {
         typingActive = false;
-        await message.reply({ content: "AI is not configured on this bot (missing OpenRouter API key for this server and in .env). Ask the server owner to set it." });
+        await message.reply({ content: "AI is not configured on this bot (missing Google AI API key for this server and in .env). Ask the server owner to set it." });
         return;
       }
 
@@ -148,6 +143,7 @@ module.exports = {
           if (userId === message.client.user.id) continue; // skip bot itself
           let mem = [];
           let roles = [];
+          let displayName = user.username;
           try {
             const profile = await UserProfile.findOne({ userId });
             if (profile && Array.isArray(profile.memory) && profile.memory.length > 0) {
@@ -157,6 +153,7 @@ module.exports = {
           try {
             // Always fetch the member from the guild, not from cache
             const member = await message.guild.members.fetch(userId);
+            displayName = member.displayName;
             if (member && member.roles && member.roles.cache) {
               roles = Array.from(member.roles.cache.values())
                 .filter(r => r.name !== '@everyone')
@@ -166,7 +163,7 @@ module.exports = {
             console.error(`Error fetching roles for mentioned user ${user.username}:`, e);
           }
           mentionedInfo.push({
-            username: user.username,
+            displayName,
             memory: mem,
             roles: roles,
           });
@@ -176,36 +173,40 @@ module.exports = {
       // --- Recent Message Context ---
       let contextMessages = [];
       try {
-        // Fetch last 10 messages (excluding system/bot messages)
+        // Fetch last 5 messages (excluding system/bot messages) to reduce prompt length
         const fetched = await message.channel.messages.fetch({ limit: 10 });
         // Sort by createdAt ascending
         const sorted = Array.from(fetched.values()).sort((a, b) => a.createdTimestamp - b.createdTimestamp);
         contextMessages = sorted
           .filter(m => !m.author.bot)
-          .map(m => `${m.author.username}: ${m.content}`)
+          .map(m => {
+            const displayName = m.member ? m.member.displayName : m.author.username;
+            return `${displayName}: ${m.content}`;
+          })
           .filter(line => line.trim().length > 0);
       } catch (e) {
         console.error('Error fetching recent messages for context:', e);
       }
 
       // --- Compose prompt for AI ---
-      const userContent = `${message.author.username}: ${message.content.replace(/<@!?\\d+>/g, '').trim()}`;
+      const authorDisplayName = message.member ? message.member.displayName : message.author.username;
+      const userContent = `${authorDisplayName}: ${message.content.replace(/<@!?\\d+>/g, '').trim()}`;
 
       let systemContext = systemPrompt;
       // Always include roles for the author, clearly labeled
       if (message.member && message.member.roles && message.member.roles.cache) {
         const authorRoles = message.member.roles.cache.filter(r => r.name !== '@everyone').map(r => r.name);
-        systemContext += `\n[ROLES for ${message.author.username} (author)]\n` + (authorRoles.length > 0 ? authorRoles.join(', ') : 'No roles');
+        systemContext += `\n[ROLES for ${authorDisplayName} (author)]\n` + (authorRoles.length > 0 ? authorRoles.join(', ') : 'No roles');
       }
       if (userMemory.length > 0) {
-        systemContext += `\n[MEMORY for ${message.author.username} (author)]\n` + userMemory.map(f => `- ${f}`).join('\n');
+        systemContext += `\n[MEMORY for ${authorDisplayName} (author)]\n` + userMemory.map(f => `- ${f}`).join('\n');
       }
       if (mentionedInfo.length > 0) {
         for (const info of mentionedInfo) {
           // Always include roles for mentioned users, clearly labeled
-          systemContext += `\n[ROLES for ${info.username} (mentioned)]\n` + (info.roles.length > 0 ? info.roles.join(', ') : 'No roles');
+          systemContext += `\n[ROLES for ${info.displayName} (mentioned)]\n` + (info.roles.length > 0 ? info.roles.join(', ') : 'No roles');
           if (info.memory.length > 0) {
-            systemContext += `\n[MEMORY for ${info.username} (mentioned)]\n` + info.memory.map(f => `- ${f}`).join('\n');
+            systemContext += `\n[MEMORY for ${info.displayName} (mentioned)]\n` + info.memory.map(f => `- ${f}`).join('\n');
           }
         }
       }
@@ -213,14 +214,23 @@ module.exports = {
         systemContext += `\n\nRecent chat context:\n` + contextMessages.join('\n');
       }
 
+      // Combine system and user content into a single prompt for Google AI
+      const fullPrompt = `${systemContext}\n\n${userContent}`;
+
       const payload = {
-        model: OPENROUTER_MODEL,
-        messages: [
-          { role: 'system', content: systemContext },
-          { role: 'user', content: userContent },
+        contents: [
+          {
+            parts: [
+              {
+                text: fullPrompt,
+              },
+            ],
+          },
         ],
-        max_tokens: 256,
-        temperature: 0.7,
+        generationConfig: {
+          
+          temperature: 0.7,
+        },
       };
 
       // Use global.fetch if available, otherwise try to require node-fetch dynamically
@@ -238,13 +248,10 @@ module.exports = {
         }
       }
 
-      const res = await fetchToUse('https://openrouter.ai/api/v1/chat/completions', {
+      const res = await fetchToUse(`https://generativelanguage.googleapis.com/v1beta/models/${GOOGLE_AI_MODEL}:generateContent?key=${GOOGLE_AI_API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://github.com/Kmber',
-          'X-Title': process.env.OPENROUTER_TITLE || 'Kiaren Discord Bot',
         },
         body: JSON.stringify(payload),
       });
@@ -252,17 +259,22 @@ module.exports = {
       if (!res.ok) {
         typingActive = false;
         const text = await res.text().catch(() => '');
-        console.error('OpenRouter API responded with error', res.status, text);
+        console.error('Google AI API responded with error', res.status, text);
         await message.reply({ content: `AI provider returned an error (${res.status}).` }).catch(() => {});
         return;
       }
 
       const data = await res.json();
-      const reply = data?.choices?.[0]?.message?.content?.trim();
+      const candidate = data?.candidates?.[0];
+      let reply = candidate?.content?.parts?.[0]?.text?.trim();
+
+      if (candidate?.finishReason === 'MAX_TOKENS') {
+        reply = "Response was too long. Please ask a shorter question or provide less context.";
+      }
 
       if (!reply) {
         typingActive = false;
-        console.error('OpenRouter response missing reply', JSON.stringify(data));
+        console.error('Google AI response missing reply', JSON.stringify(data));
         await message.reply({ content: "AI did not return a response." }).catch(() => {});
         return;
       }
