@@ -12,6 +12,7 @@ const WorldWarSchema = new mongoose.Schema({
   },
   minParticipants: { type: Number, required: true },
   maxParticipants: { type: Number, required: true },
+  messageId: { type: String },
   createdAt: { type: Date, default: Date.now },
   endedAt: { type: Date },
 });

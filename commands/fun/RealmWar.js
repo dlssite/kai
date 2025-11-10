@@ -63,20 +63,21 @@ module.exports = {
 };
 
 async function setupGame(interaction) {
+  await interaction.deferReply();
+
   if (!interaction.member.permissions.has('ManageServer')) {
-    return interaction.reply({
+    return interaction.editReply({
       content:
         'You do not have `ManageServer` permission to manage RealmWar (dark fantasy) game',
-      ephemeral: true,
     });
   }
   const min = interaction.options.getInteger('min_participants');
   const max = interaction.options.getInteger('max_participants');
 
   if (min < 2)
-    return interaction.reply('Minimum participants must be at least 2.');
+    return interaction.editReply('Minimum participants must be at least 2.');
   if (max <= min)
-    return interaction.reply(
+    return interaction.editReply(
       'Maximum participants must be greater than minimum participants.'
     );
 
@@ -101,7 +102,7 @@ async function setupGame(interaction) {
     await newGame.save();
   } catch (error) {
     console.error('Error saving game to database:', error);
-    return interaction.reply(
+    return interaction.editReply(
       'Failed to create the game. Please try again later.'
     );
   }
@@ -119,14 +120,17 @@ async function setupGame(interaction) {
       `> The cursed lands awaken. Champions and fiends gather for a night of blood and shadow.\n\n` +
         `🩸 **Dark Ritual Requirements**\n` +
         `• Minimum Champions: ${min}\n` +
-        `• Maximum Champions: ${max}\n\n` +
+        `• Maximum Champions: ${max}\n` +
+        `• Current Champions: 0\n\n` +
         `🕯️ **Join the Ritual!**\n` +
         `Click below to enter the haunted battlefield!`
     )
     .setColor('#2B1B2F')
     .setTimestamp();
 
-  await interaction.reply({ embeds: [embed], components: [row] });
+  const message = await interaction.editReply({ embeds: [embed], components: [row] });
+  newGame.messageId = message.id;
+  await newGame.save();
 }
 
 async function startGame(interaction) {

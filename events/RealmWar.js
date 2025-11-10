@@ -1,4 +1,4 @@
-const { Events } = require('discord.js');
+const { Events, EmbedBuilder } = require('discord.js');
 const WorldWar = require('../models/WorldWar');
 
 module.exports = {
@@ -36,6 +36,18 @@ module.exports = {
 
       activeGame.participants.push(userId);
       await activeGame.save();
+
+      // Update the embed with new participant count
+      const channel = interaction.channel;
+      const message = await channel.messages.fetch(activeGame.messageId);
+      const embed = message.embeds[0];
+      const newEmbed = new EmbedBuilder(embed).setDescription(
+        embed.description.replace(
+          /• Current Champions: \d+/,
+          `• Current Champions: ${activeGame.participants.length}`
+        )
+      );
+      await message.edit({ embeds: [newEmbed] });
 
       interaction.editReply({
         content: 'You have successfully joined the RealmWar!',
