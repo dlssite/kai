@@ -97,18 +97,7 @@ module.exports = {
 
     // --- Interactive AI config management for /manage_ai ---
     const ServerAIConfig = require('../../models/ServerAIConfig');
-      // --- RealmWar winner role config ---
-      const ServerRealmWarConfig = require('../../models/ServerRealmWarConfig');
-      if (interaction.isStringSelectMenu() && interaction.customId === 'realmwar_winner_role_select') {
-        const winnerRoleId = interaction.values[0];
-        await ServerRealmWarConfig.findOneAndUpdate(
-          { guildId: interaction.guild.id },
-          { winnerRoleId, updatedAt: new Date() },
-          { upsert: true }
-        );
-        await interaction.reply({ content: `RealmWar winner role set to <@&${winnerRoleId}>.`, ephemeral: true });
-        return;
-      }
+
       // --- Interactive access control for /manage_access ---
       if (interaction.isStringSelectMenu() && interaction.customId === 'access_roles') {
           // Save selected roles immediately to DB
@@ -337,88 +326,6 @@ module.exports = {
       return;
     }
 
-    // Handle activity role setup select menu
-    if (interaction.isStringSelectMenu() && interaction.customId === 'select_activity_role_tier') {
-      if (!interaction.member.permissions.has('Administrator')) {
-        return interaction.reply({
-          content: 'You do not have the `Administrator` permission to manage activity roles!',
-          ephemeral: true,
-        });
-      }
 
-      const tier = interaction.values[0];
-      const { ActivityRoles } = require('../../models/ActivityRoles');
-
-      // Show role selection for the chosen tier
-      const roles = interaction.guild.roles.cache
-        .filter(role => role.name !== '@everyone' && !role.managed)
-        .map(role => ({
-          label: role.name,
-          value: role.id,
-          description: `ID: ${role.id}`,
-        }))
-        .slice(0, 25); // Discord limit
-
-      if (roles.length === 0) {
-        return interaction.reply({
-          content: 'No manageable roles found in this server.',
-          ephemeral: true,
-        });
-      }
-
-      const selectMenu = {
-        type: 3,
-        custom_id: `select_activity_role_${tier}`,
-        placeholder: `Choose role for ${tier}`,
-        options: roles,
-      };
-
-      const row = {
-        type: 1,
-        components: [selectMenu],
-      };
-
-      await interaction.reply({
-        content: `Select the role for **${tier}**:`,
-        components: [row],
-        ephemeral: true,
-      });
-      return;
-    }
-
-    // Handle activity role selection
-    if (interaction.isStringSelectMenu() && interaction.customId.startsWith('select_activity_role_')) {
-      if (!interaction.member.permissions.has('Administrator')) {
-        return interaction.reply({
-          content: 'You do not have the `Administrator` permission to manage activity roles!',
-          ephemeral: true,
-        });
-      }
-
-      const tier = interaction.customId.replace('select_activity_role_', '');
-      const roleId = interaction.values[0];
-      const { ActivityRoles } = require('../../models/ActivityRoles');
-
-      const fieldMap = {
-        top1to3: 'top1to3RoleId',
-        top4to10: 'top4to10RoleId',
-        top11to15: 'top11to15RoleId',
-        top16to20: 'top16to20RoleId',
-        overallActive: 'overallActiveRoleId',
-        inactive: 'inactiveRoleId',
-      };
-
-      await ActivityRoles.findOneAndUpdate(
-        { guildId: interaction.guild.id },
-        { [fieldMap[tier]]: roleId },
-        { upsert: true }
-      );
-
-      await interaction.reply({
-        content: `✅ Activity role for **${tier}** set to <@&${roleId}>.`,
-        ephemeral: true,
-      });
-      return;
-    }
   },
 };

@@ -13,7 +13,12 @@ module.exports = {
   category: 'admin',
   data: new SlashCommandBuilder()
     .setName('levelrolesetup')
-    .setDescription('Interactive dashboard to manage level roles'),
+    .setDescription('Interactive dashboard to manage level roles')
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('view')
+        .setDescription('View currently configured level roles')
+    ),
 
   async execute(interaction) {
     if (!interaction.member.permissions.has('Administrator')) {
@@ -23,6 +28,61 @@ module.exports = {
       });
     }
 
+    const subcommand = interaction.options.getSubcommand();
+
+    if (subcommand === 'view') {
+      await this.handleViewRoles(interaction);
+    } else {
+      // Original interactive dashboard for setup
+      await this.handleSetupDashboard(interaction);
+    }
+  },
+
+  async handleViewRoles(interaction) {
+    const guildData = await GuildSettings.findOne({
+      guildId: interaction.guild.id,
+    });
+
+    if (!guildData || !guildData.levelingEnabled) {
+      return interaction.reply({
+        content: 'Leveling system is not enabled in this server.',
+        ephemeral: true,
+      });
+    }
+
+    const levelRoles = await LevelRoles.find({
+      guildId: interaction.guild.id,
+    }).sort({ level: 1 });
+
+    const embed = new EmbedBuilder()
+      .setTitle('Configured Level Roles')
+      .setColor('Blue')
+      .setTimestamp();
+
+    if (levelRoles.length === 0) {
+      embed.setDescription('No level roles have been configured for this server.');
+    } else {
+      const fields = levelRoles.map(r => ({
+        name: `Level ${r.level}`,
+        value: `<@&${r.roleId}>`,
+        inline: true,
+      }));
+      embed.addFields(fields);
+    }
+
+    embed.addFields({
+      name: 'Stackable Roles',
+      value: guildData.stackable ? 'Enabled' : 'Disabled',
+      inline: false,
+    });
+
+    await interaction.reply({
+      embeds: [embed],
+      ephemeral: true,
+    });
+  },
+
+  async handleSetupDashboard(interaction) {
     const guildData = await GuildSettings.findOne({
       guildId: interaction.guild.id,
     });

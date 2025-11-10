@@ -11,9 +11,63 @@ module.exports = {
         .setDescription('Set roles to be automatically assigned to new members')
         .addRoleOption((option) =>
           option
-            .setName('role')
-            .setDescription('The role to assign to new members')
+            .setName('role1')
+            .setDescription('The first role to assign to new members')
             .setRequired(true)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role2')
+            .setDescription('The second role to assign to new members (optional)')
+            .setRequired(false)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role3')
+            .setDescription('The third role to assign to new members (optional)')
+            .setRequired(false)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role4')
+            .setDescription('The fourth role to assign to new members (optional)')
+            .setRequired(false)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role5')
+            .setDescription('The fifth role to assign to new members (optional)')
+            .setRequired(false)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role6')
+            .setDescription('The sixth role to assign to new members (optional)')
+            .setRequired(false)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role7')
+            .setDescription('The seventh role to assign to new members (optional)')
+            .setRequired(false)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role8')
+            .setDescription('The eighth role to assign to new members (optional)')
+            .setRequired(false)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role9')
+            .setDescription('The ninth role to assign to new members (optional)')
+            .setRequired(false)
+        )
+        .addRoleOption((option) =>
+          option
+            .setName('role10')
+            .setDescription('The tenth role to assign to new members (optional)')
+            .setRequired(false)
         )
     )
     .addSubcommand((subcommand) =>
@@ -54,22 +108,49 @@ module.exports = {
     }
 
     if (subcommand === 'add') {
-      const role = options.getRole('role');
-      if (autoRole.roleIds.includes(role.id)) {
+      const roles = [];
+      for (let i = 1; i <= 10; i++) {
+        const role = options.getRole(`role${i}`);
+        if (role) {
+          roles.push(role);
+        }
+      }
+
+      if (roles.length === 0) {
         return interaction.reply({
-          content: `The role ${role.name} is already set as an auto-role.`,
+          content: 'No roles provided.',
           ephemeral: true,
         });
       }
-      autoRole.roleIds.push(role.id);
-      await autoRole.save();
+
+      const addedRoles = [];
+      const alreadyExists = [];
+
+      for (const role of roles) {
+        if (autoRole.roleIds.includes(role.id)) {
+          alreadyExists.push(role.name);
+        } else {
+          autoRole.roleIds.push(role.id);
+          addedRoles.push(role.name);
+        }
+      }
+
+      if (addedRoles.length > 0) {
+        await autoRole.save();
+      }
+
+      let description = '';
+      if (addedRoles.length > 0) {
+        description += `Added roles: ${addedRoles.join(', ')}\n`;
+      }
+      if (alreadyExists.length > 0) {
+        description += `Already exist: ${alreadyExists.join(', ')}`;
+      }
 
       const embed = new EmbedBuilder()
-        .setColor('#4CAF50')
+        .setColor(addedRoles.length > 0 ? '#4CAF50' : '#FFA500')
         .setTitle('Auto-Roles Updated')
-        .setDescription(
-          `The role ${role.name} has been added to the list of auto-roles. New members will automatically receive this role when they join.`
-        )
+        .setDescription(description || 'No changes made.')
         .setTimestamp();
 
       return interaction.reply({ embeds: [embed] });
