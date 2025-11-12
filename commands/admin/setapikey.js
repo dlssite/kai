@@ -4,6 +4,7 @@ const GoogleAIKey = require('../../models/GoogleAIKey');
 async function testApiKey(apiKey) {
   try {
     const fetchFn = global.fetch || require('node-fetch');
+    const model = process.env.GOOGLE_AI_MODEL || 'gemini-2.0-flash';
     const payload = {
       contents: [
         {
@@ -19,7 +20,7 @@ async function testApiKey(apiKey) {
         temperature: 0.1,
       },
     };
-    const res = await fetchFn(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    const res = await fetchFn(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
